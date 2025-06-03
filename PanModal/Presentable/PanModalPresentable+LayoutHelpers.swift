@@ -130,7 +130,7 @@ extension PanModalPresentable where Self: UIViewController {
         case .maxHeightWithTopInset(let inset):
             return inset
         case .contentHeight(let height):
-            return bottomYPos - (height + bottomLayoutOffset)
+            return bottomYPos - (height + topLayoutOffset)
         case .contentHeightIgnoringSafeArea(let height):
             return bottomYPos - height
         case .intrinsicHeight:
@@ -140,7 +140,15 @@ extension PanModalPresentable where Self: UIViewController {
                 height: UIView.layoutFittingCompressedSize.height
             )
             let intrinsicHeight = view.systemLayoutSizeFitting(targetSize).height
-            return bottomYPos - (intrinsicHeight + bottomLayoutOffset)
+            return bottomYPos - (intrinsicHeight + topLayoutOffset)
+        case .intrinsicHeightIgnoringSafeArea:
+            view.layoutIfNeeded()
+            let targetSize = CGSize(
+              width: (presentedVC?.containerView?.bounds ?? UIScreen.main.bounds).width,
+              height: UIView.layoutFittingCompressedSize.height
+            )
+            let intrinsicHeight = view.systemLayoutSizeFitting(targetSize).height
+            return bottomYPos - intrinsicHeight
         }
     }
 
@@ -162,6 +170,14 @@ extension PanModalPresentable where Self: UIViewController {
             )
             let intrinsicWidth = view.systemLayoutSizeFitting(targetSize).width
             return bottomXPos - (intrinsicWidth + bottomLayoutOffset)
+        case .intrinsicHeightIgnoringSafeArea:
+            view.layoutIfNeeded()
+            let targetSize = CGSize(
+              width: (presentedVC?.containerView?.bounds ?? UIScreen.main.bounds).width,
+              height: UIView.layoutFittingCompressedSize.height
+            )
+            let intrinsicHeight = view.systemLayoutSizeFitting(targetSize).height
+            return bottomYPos - intrinsicHeight
         }
     }
 
