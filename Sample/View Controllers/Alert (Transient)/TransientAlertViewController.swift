@@ -10,60 +10,60 @@ import UIKit
 
 class TransientAlertViewController: AlertViewController {
 
-    private weak var timer: Timer?
-    private var countdown: Int = 5
+  private weak var timer: Timer?
+  private var countdown: Int = 5
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        alertView.titleLabel.text = "Transient Alert"
-        updateMessage()
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    alertView.titleLabel.text = "Transient Alert"
+    updateMessage()
+  }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    startTimer()
+  }
+
+  private func startTimer() {
+    timer?.invalidate()
+    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+      self?.countdown -= 1
+      self?.updateMessage()
     }
+  }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        startTimer()
+  @objc func updateMessage() {
+    guard countdown > 0 else {
+      invalidateTimer()
+      dismiss(animated: true, completion: nil)
+      return
     }
+    alertView.message.text = "Message disppears in \(countdown) seconds"
+  }
 
-    private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.countdown -= 1
-            self?.updateMessage()
-        }
-    }
+  func invalidateTimer() {
+    timer?.invalidate()
+  }
 
-    @objc func updateMessage() {
-        guard countdown > 0 else {
-            invalidateTimer()
-            dismiss(animated: true, completion: nil)
-            return
-        }
-        alertView.message.text = "Message disppears in \(countdown) seconds"
-    }
+  deinit {
+    invalidateTimer()
+  }
 
-    func invalidateTimer() {
-        timer?.invalidate()
-    }
+  // MARK: - Pan Modal Presentable
 
-    deinit {
-        invalidateTimer()
-    }
+  override var showDragIndicator: Bool {
+    return false
+  }
 
-    // MARK: - Pan Modal Presentable
+  override var anchorModalToLongForm: Bool {
+    return true
+  }
 
-    override var showDragIndicator: Bool {
-        return false
-    }
+  override var panModalBackgroundColor: UIColor {
+    return .clear
+  }
 
-    override var anchorModalToLongForm: Bool {
-        return true
-    }
-
-    override var panModalBackgroundColor: UIColor {
-        return .clear
-    }
-
-    override var isUserInteractionEnabled: Bool {
-        return false
-    }
+  override var isUserInteractionEnabled: Bool {
+    return false
+  }
 }

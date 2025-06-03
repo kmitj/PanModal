@@ -14,10 +14,7 @@ import UIKit
  for a given presentation state (vertical, horizontal)
  */
 public enum PanModalOrientation: Equatable {
-
-    case vertical
-
-    case horizontal
-
+  case vertical
+  case horizontal
 }
 #endif
