@@ -243,9 +243,7 @@ open class PanModalPresentationController: UIPresentationController {
 
   deinit {
     scrollObserver?.invalidate()
-    if let scrollView = currentScrollView {
-      scrollView.removeObserver(self, forKeyPath: "contentSize")
-    }
+    scrollObserver = nil
   }
 
   override public func presentationTransitionWillBegin() {
@@ -508,8 +506,6 @@ private extension PanModalPresentationController {
         // (rotations & size changes cause positioning to be out of sync)
         let yPosition = panContainerView.frame.origin.y - panContainerView.frame.height + containerViewFrame.height
         presentedView.frame.origin.y = max(yPosition, anchoredVerticalPosition)
-        dragIndicatorView.frame.origin.y = presentedView.frame.origin.y - Constants.dragIndicatorOffset
-        //              print("presentedView.frame.origin.y2 \(presentedView.frame.origin.y)")
       }
     case PanModalOrientation.horizontal:
       if ![shortFormPosition, longFormPosition].contains(panContainerView.frame.origin.x) {
@@ -517,7 +513,6 @@ private extension PanModalPresentationController {
         // (rotations & size changes cause positioning to be out of sync)
         let xPosition = panContainerView.frame.origin.x - panContainerView.frame.width + containerViewFrame.width
         presentedView.frame.origin.x = max(xPosition, anchoredHorizontalPosition)
-//        dragIndicatorView.frame.origin.x = presentedView.frame.origin.x - Constants.dragIndicatorOffset
       }
     }
 
@@ -904,8 +899,6 @@ private extension PanModalPresentationController {
   func adjust(to position: CGFloat, _ topPadding: CGFloat) {
     let orientation = self.presentable?.orientation ?? PanModalOrientation.vertical
 
-    print("dragIndicatorViewPadding \(abs(topPadding))")
-
     switch orientation {
     case .vertical:
       let adjustedY = max(position, anchoredVerticalPosition)
@@ -983,23 +976,8 @@ private extension PanModalPresentationController {
 
       self.didPanOnScrollView(scrollView, change: change)
     }
-
-    // Also observe content size changes
-    scrollView.addObserver(self, forKeyPath: "contentSize", options: [.old, .new], context: nil)
-  }
-
-  open override func observeValue(
-    forKeyPath keyPath: String?,
-    of object: Any?,
-    change: [NSKeyValueChangeKey: Any]?,
-    context: UnsafeMutableRawPointer?
-  ) {
-    if keyPath == "contentSize",
-       let scrollView = object as? UIScrollView,
-       scrollView === currentScrollView {
-      // Update layout when content size changes
-      setNeedsLayoutUpdate()
-    }
+    
+    setNeedsLayoutUpdate()
   }
 
   /**
@@ -1011,7 +989,10 @@ private extension PanModalPresentationController {
    This is also shown in Apple Maps (reverse engineering)
    which allows us to seamlessly transition scrolling from the panContainerView to the scrollView
    */
-  func didPanOnScrollView(_ scrollView: UIScrollView, change: NSKeyValueObservedChange<CGPoint>) {
+  func didPanOnScrollView(
+    _ scrollView: UIScrollView, 
+    change: NSKeyValueObservedChange<CGPoint>
+  ) {
 
     guard
       !presentedViewController.isBeingDismissed,
@@ -1019,46 +1000,37 @@ private extension PanModalPresentationController {
     else { return }
 
     if !isPresentedViewAnchored && scrollView.contentOffset.y > -scrollView.contentInset.top {
-
-      /**
-       Hold the scrollView in place if we're actively scrolling and not handling top bounce
-       */
       haltScrolling(scrollView)
-
-    } else if scrollView.isScrolling || isPresentedViewAnimating {
-
-      if isPresentedViewAnchored {
-        /**
-         While we're scrolling upwards on the scrollView,
-         store the last content offset position
-         */
-        trackScrolling(scrollView)
-      } else {
-        /**
-         Keep scroll view in place while we're panning on main view
-         */
-        haltScrolling(scrollView)
-      }
-
-    } else if presentedViewController.view.isKind(of: UIScrollView.self)
-                && !isPresentedViewAnimating
-                && scrollView.contentOffset.y <= -scrollView.contentInset.top {
-
-      /**
-       In the case where we drag down quickly on the scroll view and let go,
-       `handleScrollViewTopBounce` adds a nice elegant touch.
-       */
-      handleScrollViewTopBounce(scrollView: scrollView, change: change)
-    } else {
-      trackScrolling(scrollView)
+      return
     }
+
+    if scrollView.isScrolling || isPresentedViewAnimating {
+      if isPresentedViewAnchored {
+        trackScrolling(scrollView)
+        return
+      }
+      haltScrolling(scrollView)
+      return
+    }
+
+    if presentedViewController.view.isKind(of: UIScrollView.self)
+        && !isPresentedViewAnimating
+        && scrollView.contentOffset.y <= -scrollView.contentInset.top {
+      handleScrollViewTopBounce(scrollView: scrollView, change: change)
+      return
+    }
+
+    trackScrolling(scrollView)
   }
 
   /**
    Halts the scroll of a given scroll view & anchors it at the `scrollViewYOffset`
    */
   func haltScrolling(_ scrollView: UIScrollView) {
-    scrollView.setContentOffset(CGPoint(x: 0, y: scrollViewYOffset - scrollView.contentInset.top), animated: false)
+    scrollView.setContentOffset(
+      CGPoint(x: 0, y: scrollViewYOffset - scrollView.contentInset.top), 
+      animated: false
+    )
     scrollView.showsVerticalScrollIndicator = false
   }
 
@@ -1081,7 +1053,10 @@ private extension PanModalPresentationController {
    - Note: This works best where the view behind view controller is a UIScrollView.
    So, for example, a UITableViewController.
    */
-  func handleScrollViewTopBounce(scrollView: UIScrollView, change: NSKeyValueObservedChange<CGPoint>) {
+  func handleScrollViewTopBounce(
+    scrollView: UIScrollView, 
+    change: NSKeyValueObservedChange<CGPoint>
+  ) {
     guard let oldYValue = change.oldValue?.y, scrollView.isDecelerating
     else { return }
 
@@ -1092,7 +1067,10 @@ private extension PanModalPresentationController {
      Decrease the view bounds by the y offset so the scroll view stays in place
      and we can still get updates on its content offset
      */
-    presentedView.bounds.size = CGSize(width: presentedSize.width, height: presentedSize.height + yOffset)
+    presentedView.bounds.size = CGSize(
+      width: presentedSize.width, 
+      height: presentedSize.height + yOffset
+    )
 
     if oldYValue > yOffset {
       /**
@@ -1116,7 +1094,10 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
   /**
    Do not require any other gesture recognizers to fail
    */
-  public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+  public func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer, 
+    shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
     false
   }
 
@@ -1124,7 +1105,10 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
    Allow simultaneous gesture recognizers only when the other gesture recognizer's view
    is the pan scrollable view
    */
-  public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+  public func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer, 
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
     guard let scrollView = presentable?.panScrollable else {
       return false
     }
@@ -1137,7 +1121,9 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
   /**
    Determine if the gesture recognizer should begin
    */
-  public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+  public func gestureRecognizerShouldBegin(
+    _ gestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
     guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {
       return true
     }
@@ -1158,9 +1144,10 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
     let translation = panGesture.translation(in: presentedView)
 
     // Determine if the gesture is in the correct direction based on orientation
-    if presentable.orientation == .vertical {
+    switch presentable.orientation {
+    case .vertical:
       return abs(velocity.y) > abs(velocity.x) && translation.y != 0
-    } else {
+    case .horizontal:
       return abs(velocity.x) > abs(velocity.y) && translation.x != 0
     }
   }
