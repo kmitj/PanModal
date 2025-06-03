@@ -9,9 +9,7 @@
 import UIKit
 
 struct UserGroupMemberPresentable: Equatable {
-
-    let name: String
-    let role: String
-    let avatarBackgroundColor: UIColor
-
+  let name: String
+  let role: String
+  let avatarBackgroundColor: UIColor
 }

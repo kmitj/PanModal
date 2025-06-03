@@ -1,8 +1,8 @@
 //
-//  PanContainerView.swift
+//  DragIndicatorView.swift
 //  PanModal
 //
-//  Copyright © 2018 Tiny Speck, Inc. All rights reserved.
+//  Copyright © 2025 Pedro Paulo de Amorim, Inc. All rights reserved.
 //
 
 #if os(iOS)
@@ -14,14 +14,13 @@ import UIKit
  This allows us to make modifications to the presented view without
  having to do those changes directly on the view
  */
-class PanContainerView: UIView {
+class DragIndicatorView: UIView {
 
-  init(presentedView: UIView, frame: CGRect) {
+  override init(frame: CGRect) {
     super.init(frame: frame)
-    var alpha: CGFloat = 1.0
-    presentedView.backgroundColor?.getRed(nil, green: nil, blue: nil, alpha: &alpha)
-    isOpaque = alpha == 1.0
-    addSubview(presentedView)
+    if #available(iOS 13.0, *) {
+      self.layer.cornerCurve = .continuous
+    }
   }
 
   @available(*, unavailable)
@@ -37,10 +36,10 @@ extension UIView {
    Convenience property for retrieving a PanContainerView instance
    from the view hierachy
    */
-  var panContainerView: PanContainerView? {
+  var dragIndicatorView: DragIndicatorView? {
     return subviews.first(where: { view -> Bool in
-      view is PanContainerView
-    }) as? PanContainerView
+      view is DragIndicatorView
+    }) as? DragIndicatorView
   }
 
 }

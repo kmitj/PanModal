@@ -13,134 +13,136 @@ import UIKit
  */
 public extension PanModalPresentable where Self: UIViewController {
 
-    var orientation: PanModalOrientation {
-        PanModalOrientation.vertical
+  var orientation: PanModalOrientation {
+    PanModalOrientation.vertical
+  }
+
+  var horizontalOffset: CGFloat {
+    return orientation == PanModalOrientation.horizontal
+      ? leadingLayoutOffset
+      : 0.0
+  }
+
+  var verticalOffset: CGFloat {
+    topLayoutOffset + 21.0
+  }
+
+  var shortForm: PanModalHeight {
+    longForm
+  }
+
+  var longForm: PanModalHeight {
+    guard let scrollView = panScrollable else {
+      return .maxHeight
     }
+    // called once during presentation and stored
+    scrollView.layoutIfNeeded()
+    return .contentHeight(
+      self.orientation == .vertical
+      ? scrollView.contentSize.height
+      : scrollView.contentSize.width
+    )
+  }
 
-    var horizontalOffset: CGFloat {
-        leadingLayoutOffset + 16.0
+  var cornerRadius: CGFloat {
+    8.0
+  }
+
+  var springDamping: CGFloat {
+    1.0
+  }
+
+  var transitionDuration: Double {
+    PanModalAnimator.Constants.defaultTransitionDuration
+  }
+
+  var transitionAnimationOptions: UIView.AnimationOptions {
+    [.curveEaseInOut, .allowUserInteraction, .beginFromCurrentState]
+  }
+
+  var panModalBackgroundColor: UIColor {
+    UIColor.black.withAlphaComponent(0.7)
+  }
+
+  var dragIndicatorBackgroundColor: UIColor {
+    UIColor.lightGray
+  }
+
+  var scrollIndicatorInsets: UIEdgeInsets {
+    let top: CGFloat = shouldRoundTopCorners ? cornerRadius : 0.0
+    return UIEdgeInsets(top: top, left: 0, bottom: bottomLayoutOffset, right: 0)
+  }
+
+  var anchorModalToLongForm: Bool {
+    true
+  }
+
+  var allowsExtendedPanScrolling: Bool {
+    guard let scrollView = panScrollable else {
+      return false
     }
+    scrollView.layoutIfNeeded()
+    return scrollView.contentSize.height > (scrollView.frame.height - bottomLayoutOffset)
+  }
 
-    var verticalOffset: CGFloat {
-        topLayoutOffset + 21.0
-    }
+  var allowsDragToDismiss: Bool {
+    true
+  }
 
-    var shortForm: PanModalHeight {
-        longForm
-    }
+  var allowsTapToDismiss: Bool {
+    true
+  }
 
-    var longForm: PanModalHeight {
-        guard let scrollView = panScrollable else {
-              return .maxHeight
-        }
-        // called once during presentation and stored
-        scrollView.layoutIfNeeded()
-        return .contentHeight(
-            self.orientation == .vertical
-                ? scrollView.contentSize.height
-                : scrollView.contentSize.width
-        )
-    }
+  var isUserInteractionEnabled: Bool {
+    true
+  }
 
-    var cornerRadius: CGFloat {
-        8.0
-    }
+  var isHapticFeedbackEnabled: Bool {
+    true
+  }
 
-    var springDamping: CGFloat {
-        0.8
-    }
+  var shouldRoundTopCorners: Bool {
+    isPanModalPresented
+  }
 
-    var transitionDuration: Double {
-        PanModalAnimator.Constants.defaultTransitionDuration
-    }
+  var showDragIndicator: Bool {
+    shouldRoundTopCorners
+  }
 
-    var transitionAnimationOptions: UIView.AnimationOptions {
-        [.curveEaseInOut, .allowUserInteraction, .beginFromCurrentState]
-    }
+  var shouldDismissWhenLongForm: Bool {
+    false
+  }
 
-    var panModalBackgroundColor: UIColor {
-        UIColor.black.withAlphaComponent(0.7)
-    }
+  var shouldUseAppearanceTransitions: Bool {
+    false
+  }
 
-    var dragIndicatorBackgroundColor: UIColor {
-        UIColor.lightGray
-    }
+  func shouldRespond(to panModalGestureRecognizer: UIPanGestureRecognizer) -> Bool {
+    true
+  }
 
-    var scrollIndicatorInsets: UIEdgeInsets {
-        let top: CGFloat = shouldRoundTopCorners ? cornerRadius : 0.0
-        return UIEdgeInsets(top: top, left: 0, bottom: bottomLayoutOffset, right: 0)
-    }
+  func willRespond(to panModalGestureRecognizer: UIPanGestureRecognizer) {
 
-    var anchorModalToLongForm: Bool {
-        true
-    }
+  }
 
-    var allowsExtendedPanScrolling: Bool {
-        guard let scrollView = panScrollable else {
-            return false
-        }
-        scrollView.layoutIfNeeded()
-        return scrollView.contentSize.height > (scrollView.frame.height - bottomLayoutOffset)
-    }
+  func shouldTransition(to state: PanModalPresentationController.PresentationState) -> Bool {
+    true
+  }
 
-    var allowsDragToDismiss: Bool {
-        true
-    }
+  func shouldPrioritize(panModalGestureRecognizer: UIPanGestureRecognizer) -> Bool {
+    false
+  }
 
-    var allowsTapToDismiss: Bool {
-        true
-    }
+  func willTransition(to state: PanModalPresentationController.PresentationState) {
 
-    var isUserInteractionEnabled: Bool {
-        true
-    }
+  }
 
-    var isHapticFeedbackEnabled: Bool {
-        true
-    }
+  func panModalWillDismiss(fromGestureRecognizer: Bool) {
 
-    var shouldRoundTopCorners: Bool {
-        isPanModalPresented
-    }
+  }
 
-    var showDragIndicator: Bool {
-        shouldRoundTopCorners
-    }
+  func panModalDidDismiss(fromGestureRecognizer: Bool) {
 
-    var shouldDismissWhenLongForm: Bool {
-        false
-    }
-
-    var shouldUseAppearanceTransitions: Bool {
-        false
-    }
-
-    func shouldRespond(to panModalGestureRecognizer: UIPanGestureRecognizer) -> Bool {
-        true
-    }
-
-    func willRespond(to panModalGestureRecognizer: UIPanGestureRecognizer) {
-
-    }
-
-    func shouldTransition(to state: PanModalPresentationController.PresentationState) -> Bool {
-        true
-    }
-
-    func shouldPrioritize(panModalGestureRecognizer: UIPanGestureRecognizer) -> Bool {
-        false
-    }
-
-    func willTransition(to state: PanModalPresentationController.PresentationState) {
-
-    }
-
-    func panModalWillDismiss(fromGestureRecognizer: Bool) {
-
-    }
-
-    func panModalDidDismiss(fromGestureRecognizer: Bool) {
-
-    }
+  }
 }
 #endif

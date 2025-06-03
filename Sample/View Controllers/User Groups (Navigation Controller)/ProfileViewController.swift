@@ -10,80 +10,80 @@ import UIKit
 
 class ProfileViewController: UIViewController {
 
-    // MARK: - Properties
+  // MARK: - Properties
 
-    let presentable: UserGroupMemberPresentable
+  let presentable: UserGroupMemberPresentable
 
-    // MARK: - Views
+  // MARK: - Views
 
-    let avatarView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 6.0
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
+  let avatarView: UIView = {
+    let view = UIView()
+    view.layer.cornerRadius = 6.0
+    view.translatesAutoresizingMaskIntoConstraints = false
+    return view
+  }()
 
-    let nameLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = #colorLiteral(red: 0.8196078431, green: 0.8235294118, blue: 0.8274509804, alpha: 1)
-        label.font = UIFont(name: "Lato-Bold", size: 20.0)
-        label.backgroundColor = .clear
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+  let nameLabel: UILabel = {
+    let label = UILabel()
+    label.textColor = #colorLiteral(red: 0.8196078431, green: 0.8235294118, blue: 0.8274509804, alpha: 1)
+    label.font = UIFont(name: "Lato-Bold", size: 20.0)
+    label.backgroundColor = .clear
+    label.translatesAutoresizingMaskIntoConstraints = false
+    return label
+  }()
 
-    let roleLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = #colorLiteral(red: 0.7019607843, green: 0.7058823529, blue: 0.7137254902, alpha: 1)
-        label.backgroundColor = .clear
-        label.font = UIFont(name: "Lato-Regular", size: 16.0)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+  let roleLabel: UILabel = {
+    let label = UILabel()
+    label.textColor = #colorLiteral(red: 0.7019607843, green: 0.7058823529, blue: 0.7137254902, alpha: 1)
+    label.backgroundColor = .clear
+    label.font = UIFont(name: "Lato-Regular", size: 16.0)
+    label.translatesAutoresizingMaskIntoConstraints = false
+    return label
+  }()
 
-    // MARK: - Initializers
+  // MARK: - Initializers
 
-    init(presentable: UserGroupMemberPresentable) {
-        self.presentable = presentable
-        super.init(nibName: nil, bundle: nil)
-    }
+  init(presentable: UserGroupMemberPresentable) {
+    self.presentable = presentable
+    super.init(nibName: nil, bundle: nil)
+  }
 
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+  required init?(coder aDecoder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
 
-    // MARK: - View Lifecycle
+  // MARK: - View Lifecycle
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+  override func viewDidLoad() {
+    super.viewDidLoad()
 
-        title = "Profile"
-        view.backgroundColor = #colorLiteral(red: 0.1019607843, green: 0.1137254902, blue: 0.1294117647, alpha: 1)
+    title = "Profile"
+    view.backgroundColor = #colorLiteral(red: 0.1019607843, green: 0.1137254902, blue: 0.1294117647, alpha: 1)
 
-        view.addSubview(avatarView)
-        view.addSubview(nameLabel)
-        view.addSubview(roleLabel)
+    view.addSubview(avatarView)
+    view.addSubview(nameLabel)
+    view.addSubview(roleLabel)
 
-        nameLabel.text = presentable.name
-        roleLabel.text = presentable.role
-        avatarView.backgroundColor = presentable.avatarBackgroundColor
+    nameLabel.text = presentable.name
+    roleLabel.text = presentable.role
+    avatarView.backgroundColor = presentable.avatarBackgroundColor
 
-        setupConstraints()
-    }
+    setupConstraints()
+  }
 
-    // MARK: - Layoutt
+  // MARK: - Layoutt
 
-    func setupConstraints() {
+  func setupConstraints() {
 
-        avatarView.widthAnchor.constraint(equalToConstant: 200.0).isActive = true
-        avatarView.heightAnchor.constraint(equalToConstant: 200.0).isActive = true
-        avatarView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        avatarView.topAnchor.constraint(equalTo: view.topAnchor, constant: 100.0).isActive = true
+    avatarView.widthAnchor.constraint(equalToConstant: 200.0).isActive = true
+    avatarView.heightAnchor.constraint(equalToConstant: 200.0).isActive = true
+    avatarView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+    avatarView.topAnchor.constraint(equalTo: view.topAnchor, constant: 100.0).isActive = true
 
-        nameLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 60.0).isActive = true
+    nameLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+    nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 60.0).isActive = true
 
-        roleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8.0).isActive = true
-    }
+    roleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+    roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8.0).isActive = true
+  }
 }

@@ -9,9 +9,7 @@
 import UIKit
 
 struct UserGroupHeaderPresentable: Equatable {
-
-    let handle: String
-    let description: String
-    let memberCount: Int
-
+  let handle: String
+  let description: String
+  let memberCount: Int
 }
