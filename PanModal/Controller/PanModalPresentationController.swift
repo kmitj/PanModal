@@ -194,7 +194,7 @@ open class PanModalPresentationController: UIPresentationController {
       presentedView: presentedViewController.view,
       frame: containerView?.frame ?? .zero
     )
-    view.backgroundColor = UIColor.red
+    view.backgroundColor = presentedViewController.view.backgroundColor ?? .clear
     view.isOpaque = false
     return view
   }()
@@ -242,12 +242,18 @@ open class PanModalPresentationController: UIPresentationController {
   // MARK: - Deinitializers
 
   deinit {
+    // Clean up scroll view observation
     scrollObserver?.invalidate()
     scrollObserver = nil
+
+    // Remove gesture recognizer
+    containerView?.removeGestureRecognizer(panGestureRecognizer)
+
+    // Clear references
+    currentScrollView = nil
   }
 
   override public func presentationTransitionWillBegin() {
-
     guard let containerView = self.containerView else {
       return
     }
@@ -271,9 +277,10 @@ open class PanModalPresentationController: UIPresentationController {
     containerView.layoutIfNeeded()
 
     coordinator.animate(alongsideTransition: { [weak self] _ in
-      self?.adjustPresentedViewFrame()
-      self?.backgroundView.dimState = .max
-      self?.presentedViewController.setNeedsStatusBarAppearanceUpdate()
+      guard let self = self else { return }
+      self.adjustPresentedViewFrame()
+      self.backgroundView.dimState = .max
+      self.presentedViewController.setNeedsStatusBarAppearanceUpdate()
     })
   }
 
@@ -306,6 +313,13 @@ open class PanModalPresentationController: UIPresentationController {
     if !completed {
       return
     }
+
+    // Clean up after dismissal
+    scrollObserver?.invalidate()
+    scrollObserver = nil
+    currentScrollView = nil
+    containerView?.removeGestureRecognizer(panGestureRecognizer)
+
     presentable?.panModalDidDismiss(fromGestureRecognizer: dismissFromGestureRecognizer)
   }
 
@@ -335,7 +349,6 @@ open class PanModalPresentationController: UIPresentationController {
   private func updateAnimationState(_ isAnimating: Bool) {
     isPresentedViewAnimating = isAnimating
   }
-
 
 }
 
@@ -423,10 +436,12 @@ private extension PanModalPresentationController {
       return false
     }
 
-    if presentable?.orientation == .horizontal && presentedView.frame.minX.rounded() <= anchoredHorizontalPosition.rounded() {
+    if presentable?.orientation == .horizontal
+      && presentedView.frame.minX.rounded() <= anchoredHorizontalPosition.rounded() {
       return true
     }
-    if presentable?.orientation == .vertical && presentedView.frame.minY.rounded() <= anchoredVerticalPosition.rounded() {
+    if presentable?.orientation == .vertical
+      && presentedView.frame.minY.rounded() <= anchoredVerticalPosition.rounded() {
       return true
     }
 
@@ -956,7 +971,7 @@ private extension PanModalPresentationController {
     // If the scroll view hasn't changed, don't recreate the observer
     guard scrollView !== currentScrollView else { return }
 
-    // Clear existing observer
+    // Clean up existing observer and reference
     scrollObserver?.invalidate()
     scrollObserver = nil
     currentScrollView = scrollView
@@ -976,7 +991,7 @@ private extension PanModalPresentationController {
 
       self.didPanOnScrollView(scrollView, change: change)
     }
-    
+
     setNeedsLayoutUpdate()
   }
 
@@ -990,7 +1005,7 @@ private extension PanModalPresentationController {
    which allows us to seamlessly transition scrolling from the panContainerView to the scrollView
    */
   func didPanOnScrollView(
-    _ scrollView: UIScrollView, 
+    _ scrollView: UIScrollView,
     change: NSKeyValueObservedChange<CGPoint>
   ) {
 
@@ -1028,7 +1043,7 @@ private extension PanModalPresentationController {
    */
   func haltScrolling(_ scrollView: UIScrollView) {
     scrollView.setContentOffset(
-      CGPoint(x: 0, y: scrollViewYOffset - scrollView.contentInset.top), 
+      CGPoint(x: 0, y: scrollViewYOffset - scrollView.contentInset.top),
       animated: false
     )
     scrollView.showsVerticalScrollIndicator = false
@@ -1054,7 +1069,7 @@ private extension PanModalPresentationController {
    So, for example, a UITableViewController.
    */
   func handleScrollViewTopBounce(
-    scrollView: UIScrollView, 
+    scrollView: UIScrollView,
     change: NSKeyValueObservedChange<CGPoint>
   ) {
     guard let oldYValue = change.oldValue?.y, scrollView.isDecelerating
@@ -1068,7 +1083,7 @@ private extension PanModalPresentationController {
      and we can still get updates on its content offset
      */
     presentedView.bounds.size = CGSize(
-      width: presentedSize.width, 
+      width: presentedSize.width,
       height: presentedSize.height + yOffset
     )
 
@@ -1095,7 +1110,7 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
    Do not require any other gesture recognizers to fail
    */
   public func gestureRecognizer(
-    _ gestureRecognizer: UIGestureRecognizer, 
+    _ gestureRecognizer: UIGestureRecognizer,
     shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer
   ) -> Bool {
     false
@@ -1106,7 +1121,7 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
    is the pan scrollable view
    */
   public func gestureRecognizer(
-    _ gestureRecognizer: UIGestureRecognizer, 
+    _ gestureRecognizer: UIGestureRecognizer,
     shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
   ) -> Bool {
     guard let scrollView = presentable?.panScrollable else {
@@ -1228,7 +1243,7 @@ private extension PanModalPresentationController {
 
   @available(iOS 11.0, *)
   private func createMask(corners: [Corner]) -> UInt {
-    corners.reduce(0, { (a, b) -> UInt in a + parseCorner(corner: b).rawValue })
+    corners.reduce(0, { (lhs, rhs) -> UInt in lhs + parseCorner(corner: rhs).rawValue })
   }
 }
 
