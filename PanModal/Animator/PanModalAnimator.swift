@@ -12,7 +12,7 @@ import UIKit
  Helper animation function to keep animations consistent.
  */
 struct PanModalAnimator {
-  
+
   /**
    Constant Animation Properties
    */

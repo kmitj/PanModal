@@ -37,9 +37,9 @@ open class PanModalPresentationController: UIPresentationController {
    Constants
    */
   struct Constants {
-    static let indicatorOffset = CGFloat(8.0)
-    static let snapMovementSensitivity = CGFloat(0.7)
+    static let dragIndicatorOffset = CGFloat(8.0)
     static let dragIndicatorSize = CGSize(width: 36.0, height: 5.0)
+    static let snapMovementSensitivity = CGFloat(0.7)
     static let minimumTransitionDuration: Double = 0.15
     static let maximumTransitionDuration: Double = 0.5
     static let defaultTransitionDuration: Double = 0.3
@@ -111,16 +111,16 @@ open class PanModalPresentationController: UIPresentationController {
     guard let presentable = presentable else {
       return 0
     }
-    
+
     if anchorModalToLongForm {
       return longFormPosition
     }
-    
+
     let offset = presentable.horizontalOffset
     guard offset >= 0 else {
       return 0
     }
-    
+
     return offset
   }
 
@@ -131,16 +131,16 @@ open class PanModalPresentationController: UIPresentationController {
     guard let presentable = presentable else {
       return 0
     }
-    
+
     if anchorModalToLongForm {
       return longFormPosition
     }
-    
+
     let offset = presentable.verticalOffset
     guard offset >= 0 else {
       return 0
     }
-    
+
     return offset
   }
 
@@ -158,7 +158,7 @@ open class PanModalPresentationController: UIPresentationController {
     guard let presentable = presentable else {
       return Constants.defaultTransitionDuration
     }
-    
+
     let duration = presentable.transitionDuration
     return min(max(duration, Constants.minimumTransitionDuration), Constants.maximumTransitionDuration)
   }
@@ -202,17 +202,11 @@ open class PanModalPresentationController: UIPresentationController {
   /**
    Drag Indicator View
    */
-  private lazy var dragIndicatorView: UIView = {
-    let view: UIView = UIView()
+  private lazy var dragIndicatorView: DragIndicatorView = {
+    let view: DragIndicatorView = DragIndicatorView()
     view.translatesAutoresizingMaskIntoConstraints = false
     view.backgroundColor = presentable?.dragIndicatorBackgroundColor
-//    var alpha: CGFloat = 1.0
-//    view.backgroundColor?.getRed(nil, green: nil, blue: nil, alpha: &alpha)
-    view.alpha = 0.0
     view.layer.cornerRadius = Constants.dragIndicatorSize.height / 2.0
-    if #available(iOS 13.0, *) {
-      view.layer.cornerCurve = .continuous
-    }
     return view
   }()
 
@@ -320,9 +314,11 @@ open class PanModalPresentationController: UIPresentationController {
   /**
    Update presented view size in response to size class changes
    */
-  override public func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+  override public func viewWillTransition(
+    to size: CGSize,
+    with coordinator: UIViewControllerTransitionCoordinator
+  ) {
     super.viewWillTransition(to: size, with: coordinator)
-
     coordinator.animate(alongsideTransition: { [weak self] _ in
       guard let self = self,
             let presentable = self.presentable
@@ -332,13 +328,7 @@ open class PanModalPresentationController: UIPresentationController {
       if presentable.shouldRoundTopCorners {
         self.addRoundedCorners(to: self.presentedView)
       }
-      self.updateDragIndicatorPosition()
-      self.updateDragIndicatorAlpha()
-    }) { [weak self] _ in
-      // Ensure final position and alpha are correct after rotation
-      self?.updateDragIndicatorPosition()
-      self?.updateDragIndicatorAlpha()
-    }
+    })
   }
 
   /**
@@ -348,47 +338,6 @@ open class PanModalPresentationController: UIPresentationController {
     isPresentedViewAnimating = isAnimating
   }
 
-  /**
-   Updates the drag indicator view position based on the current state
-   */
-  // TODO: Replace with pure constraint solution. Already in place.
-  private func updateDragIndicatorPosition() {
-//    guard let presentable = presentable,
-//          presentable.showDragIndicator else { return }
-//    
-//    switch presentable.orientation {
-//    case .vertical:
-//      let yPosition = presentedView.frame.origin.y - Constants.indicatorOffset
-//      let xPosition = (presentedView.frame.width - Constants.dragIndicatorSize.width) / 2
-////      dragIndicatorView.frame.origin = CGPoint(x: xPosition, y: yPosition)
-//    case .horizontal:
-//      let xPosition = presentedView.frame.origin.x - Constants.indicatorOffset
-//      let yPosition = (presentedView.frame.height - Constants.dragIndicatorSize.height) / 2
-//      dragIndicatorView.frame.origin = CGPoint(x: xPosition, y: yPosition)
-//    }
-  }
-
-  /**
-   Updates the drag indicator alpha based on the current position
-   */
-  private func updateDragIndicatorAlpha() {
-    guard let presentable = presentable else { return }
-    
-    let orientation = presentable.orientation
-    let percentage: CGFloat
-    
-    switch orientation {
-    case .vertical:
-      let yDisplacementFromShortForm = presentedView.frame.origin.y - shortFormPosition
-      percentage = 1.0 - (yDisplacementFromShortForm / presentedView.frame.height)
-    case .horizontal:
-      let xDisplacementFromShortForm = presentedView.frame.origin.x - shortFormPosition
-      percentage = 1.0 - (xDisplacementFromShortForm / presentedView.frame.width)
-    }
-    
-    // Ramp percentage from 0.8 to 1.0
-    dragIndicatorView.alpha = max(0.0, min(1.0, (percentage - 0.8) / 0.2))
-  }
 
 }
 
@@ -450,14 +399,14 @@ public extension PanModalPresentationController {
   func setNeedsLayoutUpdate() {
     configureViewLayout()
     adjustPresentedViewFrame()
-    
+
     // Re-observe scroll view to ensure we're tracking the current one
     if let scrollView = presentable?.panScrollable {
       observe(scrollView: scrollView)
     } else {
       observe(scrollView: nil)
     }
-    
+
     configureScrollViewInsets()
   }
 
@@ -559,7 +508,7 @@ private extension PanModalPresentationController {
         // (rotations & size changes cause positioning to be out of sync)
         let yPosition = panContainerView.frame.origin.y - panContainerView.frame.height + containerViewFrame.height
         presentedView.frame.origin.y = max(yPosition, anchoredVerticalPosition)
-        dragIndicatorView.frame.origin.y = presentedView.frame.origin.y - Constants.indicatorOffset
+        dragIndicatorView.frame.origin.y = presentedView.frame.origin.y - Constants.dragIndicatorOffset
         //              print("presentedView.frame.origin.y2 \(presentedView.frame.origin.y)")
       }
     case PanModalOrientation.horizontal:
@@ -568,7 +517,7 @@ private extension PanModalPresentationController {
         // (rotations & size changes cause positioning to be out of sync)
         let xPosition = panContainerView.frame.origin.x - panContainerView.frame.width + containerViewFrame.width
         presentedView.frame.origin.x = max(xPosition, anchoredHorizontalPosition)
-//        dragIndicatorView.frame.origin.x = presentedView.frame.origin.x - Constants.indicatorOffset
+//        dragIndicatorView.frame.origin.x = presentedView.frame.origin.x - Constants.dragIndicatorOffset
       }
     }
 
@@ -615,12 +564,12 @@ private extension PanModalPresentationController {
       dragIndicatorView.widthAnchor.constraint(equalToConstant: Constants.dragIndicatorSize.width).isActive = true
       dragIndicatorView.heightAnchor.constraint(equalToConstant: Constants.dragIndicatorSize.height).isActive = true
       dragIndicatorView.centerXAnchor.constraint(equalTo: presentedView.centerXAnchor).isActive = true
-      dragIndicatorView.bottomAnchor.constraint(equalTo: presentedView.topAnchor, constant: -Constants.indicatorOffset).isActive = true
+      dragIndicatorView.bottomAnchor.constraint(equalTo: presentedView.topAnchor, constant: -Constants.dragIndicatorOffset).isActive = true
     case .horizontal:
       dragIndicatorView.widthAnchor.constraint(equalToConstant: Constants.dragIndicatorSize.height).isActive = true
       dragIndicatorView.heightAnchor.constraint(equalToConstant: Constants.dragIndicatorSize.width).isActive = true
       dragIndicatorView.centerYAnchor.constraint(equalTo: presentedView.centerYAnchor).isActive = true
-      dragIndicatorView.trailingAnchor.constraint(equalTo: presentedView.leadingAnchor, constant: -Constants.indicatorOffset).isActive = true
+      dragIndicatorView.trailingAnchor.constraint(equalTo: presentedView.leadingAnchor, constant: -Constants.dragIndicatorOffset).isActive = true
     }
   }
 
@@ -844,10 +793,15 @@ private extension PanModalPresentationController {
   func respond(to panGestureRecognizer: UIPanGestureRecognizer) {
     presentable?.willRespond(to: panGestureRecognizer)
 
-    if self.presentable?.orientation == .vertical {
+    let orientation = self.presentable?.orientation ?? PanModalOrientation.vertical
+
+    let dragIndicatorViewPadding =
+      presentedView.frame.origin.y - dragIndicatorView.frame.origin.y
+
+    switch orientation {
+    case PanModalOrientation.vertical:
 
       var yDisplacement: CGFloat = panGestureRecognizer.translation(in: presentedView).y
-
       /**
        If the presentedView is not anchored to long form, reduce the rate of movement
        above the threshold
@@ -855,25 +809,22 @@ private extension PanModalPresentationController {
       if presentedView.frame.origin.y < longFormPosition {
         yDisplacement /= 2.0
       }
-      adjust(to: presentedView.frame.origin.y + yDisplacement)
-
+      adjust(to: presentedView.frame.origin.y + yDisplacement, dragIndicatorViewPadding)
       panGestureRecognizer.setTranslation(.zero, in: presentedView)
 
-      return
+    case PanModalOrientation.horizontal:
+
+      var xDisplacement: CGFloat = panGestureRecognizer.translation(in: presentedView).x
+      /**
+       If the presentedView is not anchored to long form, reduce the rate of movement
+       above the threshold
+       */
+      if presentedView.frame.origin.x < longFormPosition {
+        xDisplacement /= 2.0
+      }
+      adjust(to: presentedView.frame.origin.x + xDisplacement, dragIndicatorViewPadding)
+      panGestureRecognizer.setTranslation(.zero, in: presentedView)
     }
-
-    var xDisplacement: CGFloat = panGestureRecognizer.translation(in: presentedView).x
-
-    /**
-     If the presentedView is not anchored to long form, reduce the rate of movement
-     above the threshold
-     */
-    if presentedView.frame.origin.x < longFormPosition {
-      xDisplacement /= 2.0
-    }
-    adjust(to: presentedView.frame.origin.x + xDisplacement)
-
-    panGestureRecognizer.setTranslation(.zero, in: presentedView)
 
   }
 
@@ -930,60 +881,59 @@ private extension PanModalPresentationController {
   }
 
   func snap(to position: CGFloat) {
+
+    let dragIndicatorViewPadding =
+      presentedView.frame.origin.y - dragIndicatorView.frame.origin.y
+
     updateAnimationState(true)
     PanModalAnimator.animate(
       { [weak self] in
-        self?.adjust(to: position, updateDragIndicatorView: true)
+        self?.adjust(to: position, dragIndicatorViewPadding)
       },
       config: presentable
     ) { [weak self] didComplete in
       guard let self = self else { return }
-      self.adjust(to: position, updateDragIndicatorView: true)
+      self.adjust(to: position, dragIndicatorViewPadding)
       self.updateAnimationState(!didComplete)
-      // Ensure final position and alpha are correct after animation
-      if didComplete {
-        self.updateDragIndicatorPosition()
-        self.updateDragIndicatorAlpha()
-      }
     }
   }
 
   /**
    Sets the y position of the presentedView & adjusts the backgroundView.
    */
-  func adjust(to position: CGFloat, updateDragIndicatorView: Bool = false) {
+  func adjust(to position: CGFloat, _ topPadding: CGFloat) {
     let orientation = self.presentable?.orientation ?? PanModalOrientation.vertical
+
+    print("dragIndicatorViewPadding \(abs(topPadding))")
 
     switch orientation {
     case .vertical:
-      presentedView.frame.origin.y = max(position, anchoredVerticalPosition)
-      updateDragIndicatorPosition()
+      let adjustedY = max(position, anchoredVerticalPosition)
+      presentedView.frame.origin.y = adjustedY
+      dragIndicatorView.frame.origin.y = adjustedY - abs(topPadding)
 
       guard presentedView.frame.origin.y > shortFormPosition else {
         backgroundView.dimState = .max
-        dragIndicatorView.alpha = 1.0
         return
       }
 
       let yDisplacementFromShortForm: CGFloat = presentedView.frame.origin.y - shortFormPosition
       let percentage = 1.0 - (yDisplacementFromShortForm / presentedView.frame.height)
       backgroundView.dimState = .percent(percentage)
-      updateDragIndicatorAlpha()
 
     case .horizontal:
-      presentedView.frame.origin.x = max(position, anchoredHorizontalPosition)
-      updateDragIndicatorPosition()
+      let adjustedX = max(position, anchoredHorizontalPosition)
+      presentedView.frame.origin.x = adjustedX
+      dragIndicatorView.frame.origin.x = adjustedX - abs(topPadding)
 
       guard presentedView.frame.origin.x > shortFormPosition else {
         backgroundView.dimState = .max
-        dragIndicatorView.alpha = 1.0
         return
       }
 
       let xDisplacementFromShortForm: CGFloat = presentedView.frame.origin.x - shortFormPosition
       let percentage = 1.0 - (xDisplacementFromShortForm / presentedView.frame.width)
       backgroundView.dimState = .percent(percentage)
-      updateDragIndicatorAlpha()
     }
   }
 
@@ -1012,15 +962,15 @@ private extension PanModalPresentationController {
   func observe(scrollView: UIScrollView?) {
     // If the scroll view hasn't changed, don't recreate the observer
     guard scrollView !== currentScrollView else { return }
-    
+
     // Clear existing observer
     scrollObserver?.invalidate()
     scrollObserver = nil
     currentScrollView = scrollView
-    
+
     // Create new observer if we have a scroll view
     guard let scrollView = scrollView else { return }
-    
+
     scrollObserver = scrollView.observe(
       \.contentOffset, options: [.old, .new]
     ) { [weak self] scrollView, change in
@@ -1030,18 +980,18 @@ private extension PanModalPresentationController {
             !self.presentedViewController.isBeingPresented else {
         return
       }
-      
+
       self.didPanOnScrollView(scrollView, change: change)
     }
-    
+
     // Also observe content size changes
     scrollView.addObserver(self, forKeyPath: "contentSize", options: [.old, .new], context: nil)
   }
-  
+
   open override func observeValue(
     forKeyPath keyPath: String?,
     of object: Any?,
-    change: [NSKeyValueChangeKey : Any]?,
+    change: [NSKeyValueChangeKey: Any]?,
     context: UnsafeMutableRawPointer?
   ) {
     if keyPath == "contentSize",
@@ -1178,12 +1128,12 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
     guard let scrollView = presentable?.panScrollable else {
       return false
     }
-    
+
     // Only allow simultaneous recognition with the scroll view's pan gesture
-    return otherGestureRecognizer.view == scrollView && 
+    return otherGestureRecognizer.view == scrollView &&
            otherGestureRecognizer is UIPanGestureRecognizer
   }
-  
+
   /**
    Determine if the gesture recognizer should begin
    */
@@ -1191,22 +1141,22 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
     guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {
       return true
     }
-    
+
     // Don't allow gesture to begin if we're in the middle of an animation
     if isPresentedViewAnimating {
       return false
     }
-    
+
     // Check if the gesture should be allowed based on the presentable's configuration
     guard let presentable = presentable,
           presentable.shouldRespond(to: panGesture) else {
       return false
     }
-    
+
     // Get the velocity and translation
     let velocity = panGesture.velocity(in: presentedView)
     let translation = panGesture.translation(in: presentedView)
-    
+
     // Determine if the gesture is in the correct direction based on orientation
     if presentable.orientation == .vertical {
       return abs(velocity.y) > abs(velocity.x) && translation.y != 0
@@ -1214,7 +1164,7 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
       return abs(velocity.x) > abs(velocity.y) && translation.x != 0
     }
   }
-  
+
   /**
    Handle gesture recognizer state changes
    */
@@ -1223,14 +1173,14 @@ extension PanModalPresentationController: UIGestureRecognizerDelegate {
     if isPresentedViewAnimating {
       return false
     }
-    
+
     // Don't allow gesture if the touch is in a scroll view and we're not at the top
     if let scrollView = presentable?.panScrollable,
        scrollView.frame.contains(touch.location(in: presentedView)),
        scrollView.contentOffset.y > -scrollView.contentInset.top {
       return false
     }
-    
+
     return true
   }
 }

@@ -82,7 +82,7 @@ class ProfileViewController: UIViewController {
 
     nameLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
     nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 60.0).isActive = true
-    
+
     roleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
     roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8.0).isActive = true
   }

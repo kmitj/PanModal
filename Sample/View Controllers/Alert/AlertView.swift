@@ -70,7 +70,7 @@ class AlertView: UIView {
     icon.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -14).isActive = true
     icon.widthAnchor.constraint(equalTo: icon.heightAnchor).isActive = true
   }
-  
+
   private func layoutStackView() {
     addSubview(alertStackView)
     alertStackView.translatesAutoresizingMaskIntoConstraints = false

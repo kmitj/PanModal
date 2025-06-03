@@ -71,6 +71,10 @@ public class PanModalPresentationAnimator: NSObject {
 
     let presentable: PanModalPresentable.LayoutType? = panModalLayoutType(from: transitionContext)
 
+    let dragIndicatorView: DragIndicatorView? = transitionContext.containerView.dragIndicatorView
+
+    let orientation: PanModalOrientation = presentable?.orientation ?? PanModalOrientation.vertical
+
     if presentable?.shouldUseAppearanceTransitions == true {
 
       // Presents the view in shortForm position, initially
@@ -82,12 +86,15 @@ public class PanModalPresentationAnimator: NSObject {
       // Move presented view offscreen (from the bottom)
       panView.frame = transitionContext.finalFrame(for: toVC)
 
-      if presentable?.orientation == .vertical {
+      switch orientation {
+      case PanModalOrientation.vertical:
         panView.frame.origin.y = transitionContext.containerView.frame.height
-      } else {
+        dragIndicatorView?.frame.origin.y = transitionContext.containerView.frame.height
+      case PanModalOrientation.horizontal:
         panView.frame.origin.y = presentable?.topLayoutOffset ?? 0.0
         panView.frame.origin.x = transitionContext.containerView.frame.width
         panView.frame.size.height -= (presentable?.topLayoutOffset ?? 0.0) +  (presentable?.bottomLayoutOffset ?? 0.0)
+        dragIndicatorView?.frame.origin.x = transitionContext.containerView.frame.width
       }
 
       // Haptic feedback
@@ -97,9 +104,11 @@ public class PanModalPresentationAnimator: NSObject {
 
       PanModalAnimator.animate(
         {
-          if presentable?.orientation == .vertical {
+          switch orientation {
+          case PanModalOrientation.vertical:
             panView.frame.origin.y = position
-          } else {
+            dragIndicatorView?.frame.origin.y = position
+          case PanModalOrientation.horizontal:
             panView.frame.origin.x = position
           }
         }, config: presentable
@@ -123,12 +132,12 @@ public class PanModalPresentationAnimator: NSObject {
 
     // Move presented view offscreen (from the bottom)
     panContainerView.frame = transitionContext.finalFrame(for: toVC)
-    if presentable?.orientation == .vertical {
+
+    switch orientation {
+    case PanModalOrientation.vertical:
       panContainerView.frame.origin.y = transitionContext.containerView.frame.height
-    } else {
-      //            panView.frame.origin.y = presentable?.topLayoutOffset ?? 0.0
+    case PanModalOrientation.horizontal:
       panContainerView.frame.origin.x = transitionContext.containerView.frame.width
-      //            panView.frame.size.height -= (presentable?.topLayoutOffset ?? 0.0) +  (presentable?.bottomLayoutOffset ?? 0.0)
     }
 
     // Haptic feedback
@@ -136,11 +145,15 @@ public class PanModalPresentationAnimator: NSObject {
       feedbackGenerator?.selectionChanged()
     }
 
-    PanModalAnimator.animate({
-        if presentable?.orientation == .vertical {
+    PanModalAnimator.animate(
+      {
+        switch orientation {
+        case PanModalOrientation.vertical:
           panContainerView.frame.origin.y = position
-        } else {
+          dragIndicatorView?.frame.origin.y = position
+        case PanModalOrientation.horizontal:
           panContainerView.frame.origin.x = position
+          dragIndicatorView?.frame.origin.x = position
         }
       },
       config: presentable
@@ -166,15 +179,25 @@ public class PanModalPresentationAnimator: NSObject {
     toVC.beginAppearanceTransition(true, animated: true)
 
     let presentable = panModalLayoutType(from: transitionContext)
+
+    let orientation: PanModalOrientation = presentable?.orientation ?? PanModalOrientation.vertical
+
+    let dragIndicatorView: DragIndicatorView? = transitionContext.containerView.dragIndicatorView
+
     let panView: UIView = transitionContext.containerView.panContainerView ?? fromVC.view
 
-    PanModalAnimator.animate({
-      if presentable?.orientation == .vertical {
-        panView.frame.origin.y = transitionContext.containerView.frame.height
-      } else {
-        panView.frame.origin.x = transitionContext.containerView.frame.width
-      }
-    }, config: presentable) { didComplete in
+    PanModalAnimator.animate(
+      {
+        switch orientation {
+        case PanModalOrientation.vertical:
+          panView.frame.origin.y = transitionContext.containerView.frame.height
+          dragIndicatorView?.frame.origin.y = transitionContext.containerView.frame.height
+        case PanModalOrientation.horizontal:
+          panView.frame.origin.x = transitionContext.containerView.frame.width
+          dragIndicatorView?.frame.origin.x = transitionContext.containerView.frame.width
+        }
+      }, config: presentable
+    ) { didComplete in
       fromVC.view.removeFromSuperview()
       // Calls viewDidAppear and viewDidDisappear
       toVC.endAppearanceTransition()
@@ -204,12 +227,10 @@ extension PanModalPresentationAnimator: UIViewControllerAnimatedTransitioning {
    Returns the transition duration
    */
   public func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-
     guard
       let context = transitionContext,
       let presentable = panModalLayoutType(from: context)
     else { return PanModalAnimator.Constants.defaultTransitionDuration }
-
     return presentable.transitionDuration
   }
 

@@ -80,7 +80,7 @@ public protocol PanModalPresentable: AnyObject {
    The springDamping value used to determine the amount of 'bounce'
    seen when transitioning to short/long form.
 
-   Default Value is 0.8.
+   Default Value is 1.0.
    */
   var springDamping: CGFloat { get }
 
